@@ -1,26 +1,50 @@
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
+import { RoundButton , CalcPanel, EllipseButton, CalcInput} from './components'
+import { CalcContext, calculator } from './context/CalcContext';
+import { getCalculator } from './util/CalculateUtils';
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+const labels = [
+    'AC','+/-','%', '÷',
+    '7',  '8', '9', 'x',
+    '4',  '5', '6', '-',
+    '1',  '2', '3', '+',
+    '0',  '.', '='
+];
+
+class App extends React.Component {
+
+    constructor(props) {
+        super(props);
+        const Calculator = getCalculator();
+        this.calculate = (val) => {
+            const result = Calculator.calculate(this.state.value, val);
+            this.setState({...this.state, ...result});
+        }
+        this.state = {
+            value: calculator.value,
+            calculate: this.calculate
+        }
+
+
+    }
+
+    render() {
+        return (
+            <div className="App">
+                <CalcPanel>
+                    <CalcContext.Provider value = { this.state } >
+                        <CalcInput/>
+                        {
+                            labels.map((label,index) =>
+                                '0' === label ? <EllipseButton key = {`E-${index}`}/>
+                                    : <RoundButton key = {`B-${index}`} value = {label}/>)
+                        }
+                    </CalcContext.Provider>
+                </CalcPanel>
+            </div>
+        );
+    }
 }
 
 export default App;
