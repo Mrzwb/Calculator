@@ -25,8 +25,6 @@ class App extends React.Component {
             value: calculator.value,
             calculate: this.calculate
         }
-
-
     }
 
     render() {
