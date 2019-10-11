@@ -36,8 +36,8 @@ export function getCalculator(){
             return this.nextStatus;
         },
 
-        replace: function(index, val) {
-            this.data[index] = val;
+        replace: function(index, value) {
+            this.data[index] = value;
         },
 
         isEmpty: function() {
@@ -133,13 +133,15 @@ export function getCalculator(){
             // 输入正负
             if (/\+\/-/.test(next)) {
                 val = /^-/.test(current) ? current.substr(1) : '-'.concat(current);
-                calcStack.replace(1,val);
+                if (calcStack.isNextStatus()) {
+                    calcStack.replace(1,val);
+                }
                 return reduceState(val);
             }
 
             // 百分号
             if (/%/.test(next)) {
-                val = EasyFloat.floatDivide(current,100);
+                val = getResult('%',current,'');
                 return reduceState(val);
             }
 
