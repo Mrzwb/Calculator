@@ -142,6 +142,9 @@ export function getCalculator(){
             // 百分号
             if (/%/.test(next)) {
                 val = getResult('%',current,'');
+                if (calcStack.isNextStatus()) {
+                    calcStack.replace(1,val);
+                }
                 return reduceState(val);
             }
 
