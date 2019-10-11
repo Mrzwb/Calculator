@@ -1,38 +1,24 @@
 import { calculator } from '../context/CalcContext';
-
-const _math = require('lodash/math');
+import Big from 'big.js/big.mjs';
 
 export const EasyFloat = {
 
-    precision: function(str) {
-        const arr = str.split('.');
-        return arr.length === 2 ? arr.pop().length : 0;
-    },
-
-    maxPrecision: function(fa, fb) {
-        return Math.max(this.precision(fa),this.precision(fb));
-    },
-
     floatAdd: function(fa, fb) {
-        const len = this.maxPrecision(fa, fb);
-        return _math.add(parseFloat(fa), parseFloat(fb)).toFixed(len);;
+        return Big(fa).plus(fb);
     },
 
     floatSubtract: function(fa, fb) {
-        const len = this.maxPrecision(fa, fb);
-        return _math.subtract(parseFloat(fa), parseFloat(fb)).toFixed(len);
+        return Big(fa).minus(fb);
     },
 
     floatMultiply: function(fa, fb) {
-        const len = this.precision(fa) + this.precision(fb);
-        return _math.multiply(parseFloat(fa), parseFloat(fb)).toFixed(len);
+        return Big(fa).times(fb);
     },
 
     floatDivide: function (fa, fb) {
-        return _math.divide(parseFloat(fa), parseFloat(fb));
+        return Big(fa).div(fb);
     }
 }
-
 
 export function getCalculator(){
 
@@ -48,6 +34,10 @@ export function getCalculator(){
 
         isNextStatus: function () {
             return this.nextStatus;
+        },
+
+        replace: function(index, val) {
+            this.data[index] = val;
         },
 
         isEmpty: function() {
@@ -143,24 +133,57 @@ export function getCalculator(){
             // 输入正负
             if (/\+\/-/.test(next)) {
                 val = /^-/.test(current) ? current.substr(1) : '-'.concat(current);
+                calcStack.replace(1,val);
                 return reduceState(val);
             }
 
+            // 百分号
+            if (/%/.test(next)) {
+                val = EasyFloat.floatDivide(current,100);
+                return reduceState(val);
+            }
+
+            //  输出操作
+            if (/=/.test(next)) {
+                if (calcStack.isNotEmpty()) {
+                    const currentVal = calcStack.shift();
+                    const prevVal = calcStack.shift();
+                    const symbol = calcStack.shift();
+                    if (calcStack.isNextStatus()) {
+                        val = getResult(symbol, prevVal, currentVal);
+                        calcStack.push(currentVal)
+                    } else {
+                        val = getResult(symbol, prevVal, current);
+                        calcStack.push(current);
+                        calcStack.setNextStatus(true);
+                    }
+                    calcStack.push(val);
+                    calcStack.push(symbol);
+
+                    console.info(calcStack.data);
+                    return reduceState(val);
+                }
+            }
+
             // 输入操作符
-            if (/[\\+-÷x%]/.test(next)) {
-                val = current;
+            if (/[\\+-÷x]/.test(next)) {
+                val =  current;
                 if (calcStack.isEmpty()) {
+                    calcStack.push(current);
                     calcStack.push(current);
                     calcStack.push(next);
                 } else {
-                    if (!calcStack.isNextStatus()) {        // 非下一步输入状态, 计算值
+                    if (!calcStack.isNextStatus()) {                    // 非下一步输入状态, 计算值
+                        calcStack.shift();
                         const prevVal = calcStack.shift();
                         const symbol = calcStack.shift();
                         val = getResult(symbol, prevVal, current);
 
                         // 计算后的值入栈
+                        calcStack.push(current);
                         calcStack.push(val);
                         calcStack.push(next);
+
                     } else {
                         const symbol = calcStack.pop();
                         if (symbol !== next) {
@@ -170,7 +193,7 @@ export function getCalculator(){
                         }
                     }
                 }
-                calcStack.setNextStatus(true);            //  等待下一步输入
+                calcStack.setNextStatus(true);                          //  等待下一步输入
                 return reduceState(val);
             }
 
